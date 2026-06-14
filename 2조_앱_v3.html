@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>중고대신 앱</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; background:#1a1a1a; display:flex; justify-content:center; align-items:center; font-family:'Noto Sans KR',sans-serif; }
+
+:root {
+  --lime:#c8f53a;
+  --lime-dim:#a8d020;
+  --black:#111;
+  --white:#fff;
+  --bg:#f5f2ee;
+  --card:#ffffff;
+  --coral:#ff5c3a;
+  --muted:#999;
+  --border:#eee;
+  --navy:#1a1a2e;
+  --green:#22c55e;
+  --yellow:#f59e0b;
+  --purple:#7c5cff;
+  --purple-soft:#b8a4ff;
+  --purple-bg:#f3eeff;
+}
+
+.phone { width: 390px; height: 844px; background: var(--bg); border-radius: 50px; overflow: hidden; position: relative; box-shadow: 0 40px 100px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.08); display: flex; flex-direction: column; }
+
+.status-bar { height: 48px; background: var(--black); display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; flex-shrink: 0; }
+.status-time { color: var(--white); font-size: 0.8rem; font-weight: 700; }
+.status-icons { display:flex; gap:5px; align-items:center; }
+.status-icons span { color: var(--white); font-size: 0.65rem; }
+
+.screen { overflow-y: auto; overflow-x: hidden; flex-direction: column; scrollbar-width: none; display: none; }
+.screen::-webkit-scrollbar { display:none; }
+.screen.active { display: flex; }
+
+.bottom-nav { height: 72px; background: var(--black); display: flex; align-items: center; justify-content: space-around; flex-shrink: 0; padding-bottom: 4px; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 8px 16px; border-radius: 12px; transition: background 0.2s; border: none; background: transparent; }
+.nav-item.active .nav-icon, .nav-item.active .nav-label { color: var(--lime); }
+.nav-icon { font-size: 1.3rem; color: rgba(255,255,255,0.35); transition: color 0.2s; }
+.nav-label { font-size: 0.6rem; color: rgba(255,255,255,0.35); font-weight: 700; letter-spacing:0.05em; transition: color 0.2s; }
+
+/* ============ HOME ============ */
+.home-header { background: var(--black); padding: 1.2rem 1.5rem 1.5rem; }
+.home-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; }
+.home-logo { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; color:var(--lime); letter-spacing:0.05em; }
+.home-alarm { width:36px; height:36px; background:#222; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1rem; position:relative; cursor:pointer; }
+.alarm-dot { position:absolute; top:6px; right:6px; width:7px; height:7px; background:var(--coral); border-radius:50%; border:1.5px solid var(--black); }
+.home-greeting { color:rgba(255,255,255,0.5); font-size:0.78rem; margin-bottom:0.3rem; }
+.home-name { color:var(--white); font-size:1.15rem; font-weight:700; }
+.home-name em { color:var(--lime); font-style:normal; }
+
+.home-body { padding: 1.2rem 1.5rem; display:flex; flex-direction:column; gap:1.2rem; }
+
+/* PROMO BANNER (신규 - 신규 고객 무료 쿠폰) */
+.promo-banner {
+  background: var(--purple);
+  border-radius: 16px;
+  padding: 1.2rem;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.promo-banner::before {
+  content: 'FIRST';
+  position: absolute;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 4.5rem;
+  color: rgba(255,255,255,0.08);
+  top: 50%;
+  right: -10px;
+  transform: translateY(-50%);
+  letter-spacing: 0.05em;
+}
+.promo-info { position: relative; z-index: 1; flex: 1; }
+.promo-label { display:inline-block; background:var(--lime); color:var(--black); font-size:0.6rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:100px; margin-bottom:0.5rem; letter-spacing:0.05em; }
+.promo-title { color:var(--white); font-size:0.95rem; font-weight:700; line-height:1.4; margin-bottom:0.3rem; }
+.promo-title strong { color:var(--lime); }
+.promo-sub { color:rgba(255,255,255,0.7); font-size:0.72rem; }
+.promo-arrow { color:var(--white); font-size:1.3rem; position:relative; z-index:1; }
+
+/* Quick Actions */
+.quick-actions { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; }
+.qa-btn { border-radius:16px; padding:1.2rem; display:flex; flex-direction:column; gap:0.5rem; cursor:pointer; border:none; transition:transform 0.15s; text-align:left; }
+.qa-btn:active { transform:scale(0.97); }
+.qa-btn.primary { background:var(--lime); grid-column:span 2; flex-direction:row; align-items:center; justify-content:space-between; }
+.qa-btn.secondary { background:var(--card); border:1px solid var(--border); }
+.qa-icon { font-size:1.5rem; }
+.qa-label { font-size:0.8rem; font-weight:700; color:var(--black); }
+.qa-sub { font-size:0.7rem; color:rgba(0,0,0,0.5); font-weight:400; }
+.qa-arrow { font-size:1.5rem; color:var(--black); opacity:0.4; }
+.qa-btn.secondary .qa-label { color:var(--black); }
+.qa-btn.secondary .qa-sub { color:var(--muted); }
+
+.section-title-row { display:flex; justify-content:space-between; align-items:center; }
+.section-ttl { font-size:0.9rem; font-weight:700; color:var(--black); }
+.section-more { font-size:0.75rem; color:var(--muted); cursor:pointer; }
+
+.item-card { background:var(--card); border-radius:16px; padding:1rem; display:flex; gap:0.9rem; align-items:center; border:1px solid var(--border); cursor:pointer; transition:transform 0.15s; }
+.item-card:active { transform:scale(0.98); }
+.item-thumb { width:56px; height:56px; border-radius:12px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:1.6rem; flex-shrink:0; }
+.item-info { flex:1; min-width:0; }
+.item-name { font-size:0.85rem; font-weight:700; color:var(--black); margin-bottom:0.25rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.item-price { font-size:0.8rem; font-weight:700; color:var(--black); }
+.item-status-badge { font-size:0.65rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:100px; white-space:nowrap; }
+.badge-green { background:#dcfce7; color:#16a34a; }
+.badge-yellow { background:#fef9c3; color:#a16207; }
+.badge-blue { background:#dbeafe; color:#1d4ed8; }
+.badge-purple { background:#f3eeff; color:#7c5cff; }
+
+/* Trust Card (신규 - 인터뷰에서 신뢰 강조) */
+.trust-card { background:var(--white); border:1.5px solid var(--purple-soft); border-radius:16px; padding:1.2rem; display:flex; gap:1rem; align-items:center; }
+.trust-icon { width:48px; height:48px; background:var(--purple-bg); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0; }
+.trust-text { flex:1; }
+.trust-label { font-size:0.65rem; font-weight:700; color:var(--purple); letter-spacing:0.1em; margin-bottom:0.3rem; }
+.trust-desc { font-size:0.78rem; color:var(--black); line-height:1.5; font-weight:500; }
+
+.tip-card { background:var(--navy); border-radius:16px; padding:1.2rem; display:flex; align-items:center; gap:1rem; }
+.tip-icon { font-size:2rem; }
+.tip-text { flex:1; }
+.tip-label { font-size:0.65rem; font-weight:700; color:var(--lime); letter-spacing:0.1em; margin-bottom:0.3rem; }
+.tip-desc { font-size:0.78rem; color:rgba(255,255,255,0.7); line-height:1.5; }
+
+/* ============ SELL ============ */
+.screen-header { background: var(--black); padding: 1.2rem 1.5rem; display: flex; align-items: center; gap: 1rem; }
+.back-btn { background:none; border:none; color:var(--white); font-size:1.2rem; cursor:pointer; padding:0; line-height:1; }
+.screen-header-title { font-size:1rem; font-weight:700; color:var(--white); }
+
+.sell-body { padding:1.5rem; display:flex; flex-direction:column; gap:1.5rem; flex:1; }
+.sell-step-bar { display:flex; gap:6px; }
+.sell-step { height:4px; flex:1; border-radius:100px; background:var(--border); }
+.sell-step.done { background:var(--black); }
+.sell-step.active { background:var(--lime); }
+.sell-section-title { font-size:0.8rem; font-weight:700; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:0.8rem; }
+
+.photo-preview { display:flex; gap:0.6rem; }
+.photo-thumb-item { width:72px; height:72px; border-radius:12px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:1.8rem; border:1.5px solid var(--border); position:relative; flex-shrink:0; }
+.photo-thumb-item.add { border-style:dashed; cursor:pointer; font-size:1.2rem; color:var(--muted); }
+
+.form-field { display:flex; flex-direction:column; gap:0.5rem; }
+.form-label { font-size:0.8rem; font-weight:700; color:var(--black); }
+.form-input { background:var(--card); border:1.5px solid var(--border); border-radius:12px; padding:0.85rem 1rem; font-size:0.9rem; font-family:'Noto Sans KR',sans-serif; color:var(--black); outline:none; transition:border-color 0.2s; width:100%; }
+.form-input:focus { border-color:var(--black); }
+.form-input::placeholder { color:#ccc; }
+.form-textarea { resize:none; height:80px; line-height:1.6; }
+.form-select { appearance:none; background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 1rem center; }
+
+.chip-row { display:flex; flex-wrap:wrap; gap:0.5rem; }
+.chip { padding:0.4rem 1rem; border-radius:100px; font-size:0.78rem; font-weight:700; border:1.5px solid var(--border); background:var(--card); cursor:pointer; transition:all 0.15s; color:var(--black); }
+.chip.selected { background:var(--black); color:var(--lime); border-color:var(--black); }
+
+.price-estimate { background:var(--black); border-radius:16px; padding:1.2rem; display:flex; justify-content:space-between; align-items:center; }
+.pe-label { font-size:0.75rem; color:rgba(255,255,255,0.5); margin-bottom:0.3rem; }
+.pe-value { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; color:var(--lime); letter-spacing:0.02em; }
+.pe-rate { text-align:right; }
+.pe-rate-label { font-size:0.7rem; color:rgba(255,255,255,0.4); margin-bottom:0.3rem; }
+.pe-rate-value { font-size:0.9rem; font-weight:700; color:var(--white); }
+
+/* Coupon Apply Box (신규) */
+.coupon-apply { background: linear-gradient(135deg, var(--purple) 0%, #9d7eff 100%); border-radius: 16px; padding: 1.2rem; display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; }
+.coupon-apply::before { content: ''; position: absolute; width: 60px; height: 60px; background: rgba(255,255,255,0.1); border-radius: 50%; top: -20px; right: -10px; }
+.ca-info { position: relative; }
+.ca-label { font-size: 0.65rem; font-weight: 700; color: var(--lime); letter-spacing: 0.1em; margin-bottom: 0.3rem; }
+.ca-title { color: var(--white); font-size: 0.95rem; font-weight: 700; margin-bottom: 0.2rem; }
+.ca-sub { color: rgba(255,255,255,0.7); font-size: 0.7rem; }
+.ca-toggle { position: relative; width: 44px; height: 24px; background: rgba(255,255,255,0.3); border-radius: 100px; cursor: pointer; transition: background 0.2s; }
+.ca-toggle.on { background: var(--lime); }
+.ca-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: var(--white); border-radius: 50%; transition: transform 0.2s; }
+.ca-toggle.on::after { transform: translateX(20px); background: var(--black); }
+
+.submit-btn { background:var(--lime); border:none; border-radius:16px; padding:1.1rem; font-family:'Noto Sans KR',sans-serif; font-size:1rem; font-weight:700; color:var(--black); cursor:pointer; width:100%; transition:transform 0.15s, background 0.2s; }
+.submit-btn:active { transform:scale(0.98); background:var(--lime-dim); }
+
+/* ============ PROGRESS ============ */
+.progress-body { padding:1.5rem; display:flex; flex-direction:column; gap:1.2rem; }
+.prog-filter { display:flex; gap:0.5rem; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+.prog-filter::-webkit-scrollbar { display:none; }
+.prog-filter-chip { padding:0.4rem 1rem; border-radius:100px; font-size:0.75rem; font-weight:700; border:1.5px solid var(--border); background:var(--card); cursor:pointer; white-space:nowrap; color:var(--muted); transition:all 0.15s; flex-shrink:0; }
+.prog-filter-chip.active { background:var(--black); color:var(--lime); border-color:var(--black); }
+
+.prog-card { background:var(--card); border-radius:20px; overflow:hidden; border:1px solid var(--border); cursor:pointer; transition:transform 0.15s; }
+.prog-card:active { transform:scale(0.99); }
+.prog-card-header { padding:1rem 1.2rem; display:flex; align-items:center; gap:0.8rem; border-bottom:1px solid var(--border); }
+.prog-thumb { width:48px; height:48px; border-radius:10px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0; }
+.prog-info { flex:1; min-width:0; }
+.prog-name { font-size:0.88rem; font-weight:700; color:var(--black); margin-bottom:0.2rem; }
+.prog-price { font-size:0.82rem; color:var(--muted); }
+
+.prog-timeline { padding:1.2rem; }
+.timeline-item { display:flex; gap:0.9rem; position:relative; padding-bottom:1.1rem; }
+.timeline-item:last-child { padding-bottom:0; }
+.timeline-item:not(:last-child)::before { content:''; position:absolute; left:11px; top:24px; width:2px; bottom:0; background:var(--border); }
+.tl-dot { width:24px; height:24px; border-radius:50%; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:0.65rem; flex-shrink:0; position:relative; z-index:1; }
+.tl-dot.done { background:var(--black); color:var(--lime); font-size:0.7rem; }
+.tl-dot.active { background:var(--lime); color:var(--black); font-size:0.7rem; animation:tlpulse 1.5s infinite; }
+.tl-dot.pending { background:var(--border); }
+@keyframes tlpulse { 0%,100% { box-shadow:0 0 0 0 rgba(200,245,58,0.4); } 50% { box-shadow:0 0 0 6px rgba(200,245,58,0); } }
+.tl-content { flex:1; padding-top:2px; }
+.tl-label { font-size:0.8rem; font-weight:700; color:var(--black); }
+.tl-label.muted { color:var(--muted); font-weight:500; }
+.tl-date { font-size:0.68rem; color:var(--muted); margin-top:0.15rem; }
+
+/* Status Photo Stack (신규 - 상태 투명 공개) */
+.status-photos { padding: 0 1.2rem 1.2rem; display: flex; gap: 0.5rem; }
+.sp-thumb {
+  flex: 1;
+  height: 64px;
+  border-radius: 8px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  position: relative;
+  border: 1px solid var(--border);
+}
+.sp-thumb::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: 4px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* ============ SETTLE ============ */
+.settle-body { padding:1.5rem; display:flex; flex-direction:column; gap:1.2rem; }
+.settle-summary { background:var(--black); border-radius:20px; padding:1.5rem; }
+.settle-month { font-size:0.7rem; color:rgba(255,255,255,0.4); letter-spacing:0.1em; margin-bottom:0.5rem; }
+.settle-total-label { font-size:0.8rem; color:rgba(255,255,255,0.5); margin-bottom:0.3rem; }
+.settle-total-value { font-family:'Bebas Neue',sans-serif; font-size:3rem; color:var(--lime); line-height:1; letter-spacing:0.02em; margin-bottom:1.2rem; }
+.settle-row { display:flex; justify-content:space-between; padding:0.6rem 0; border-top:1px solid rgba(255,255,255,0.08); }
+.settle-row-label { font-size:0.78rem; color:rgba(255,255,255,0.45); }
+.settle-row-val { font-size:0.78rem; font-weight:700; color:var(--white); }
+.settle-row-val.neg { color:#ff6b6b; }
+.settle-row-val.lime { color:var(--lime); }
+.settle-row-val.discount { color:var(--purple-soft); }
+
+.settle-history-card { background:var(--card); border-radius:16px; overflow:hidden; border:1px solid var(--border); }
+.settle-history-item { padding:1rem 1.2rem; display:flex; align-items:center; gap:0.9rem; border-bottom:1px solid var(--border); }
+.settle-history-item:last-child { border-bottom:none; }
+.sh-thumb { width:44px; height:44px; border-radius:10px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
+.sh-info { flex:1; }
+.sh-name { font-size:0.83rem; font-weight:700; color:var(--black); margin-bottom:0.2rem; }
+.sh-date { font-size:0.7rem; color:var(--muted); }
+.sh-amount { text-align:right; }
+.sh-total { font-size:0.85rem; font-weight:700; color:var(--black); }
+.sh-fee { font-size:0.68rem; color:var(--muted); margin-top:0.15rem; }
+
+.settle-detail-box { background:var(--card); border-radius:16px; padding:1.2rem; border:1px solid var(--border); }
+.sdb-title { font-size:0.8rem; font-weight:700; margin-bottom:1rem; color:var(--black); }
+.sdb-row { display:flex; justify-content:space-between; align-items:center; padding:0.55rem 0; border-bottom:1px solid var(--border); }
+.sdb-row:last-child { border-bottom:none; }
+.sdb-label { font-size:0.8rem; color:var(--muted); }
+.sdb-val { font-size:0.8rem; font-weight:700; color:var(--black); }
+.sdb-val.lime { color:#16a34a; }
+.sdb-val.red { color:var(--coral); }
+.sdb-val.purple { color: var(--purple); }
+
+.withdraw-btn { background:var(--lime); border:none; border-radius:14px; padding:1rem; font-family:'Noto Sans KR',sans-serif; font-size:0.95rem; font-weight:700; color:var(--black); cursor:pointer; width:100%; transition:transform 0.15s; }
+.withdraw-btn:active { transform:scale(0.98); }
+
+.screen { transition: opacity 0.2s; }
+
+/* ============ MARKET ============ */
+.market-header {
+  background: var(--black);
+  padding: 1rem 1.2rem 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.market-loc-wrap { display: flex; flex-direction: column; }
+.market-loc-main { color: var(--white); font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 0.3rem; }
+.market-loc-main .loc-arrow { font-size: 0.7rem; opacity: 0.6; }
+.market-loc-sub { color: rgba(255,255,255,0.4); font-size: 0.68rem; margin-top: 0.15rem; }
+.market-icons { display: flex; gap: 0.6rem; }
+.market-icon-btn { background: rgba(255,255,255,0.08); border: none; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; cursor: pointer; color: white; }
+
+.market-tabs { background: var(--black); display: flex; gap: 0; padding: 0 1rem 0; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+.market-tab { padding: 0.55rem 0.8rem; font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.35); border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.15s; font-family: 'Noto Sans KR', sans-serif; }
+.market-tab.active { color: var(--lime); border-bottom-color: var(--lime); }
+
+.market-list { flex: 1; overflow-y: auto; overflow-x: hidden; background: var(--white); scrollbar-width: none; }
+.market-list::-webkit-scrollbar { display: none; }
+
+.market-item { display: flex; gap: 0.85rem; padding: 1rem 1.1rem; border-bottom: 1px solid #f0f0f0; cursor: pointer; background: var(--white); transition: background 0.1s; -webkit-tap-highlight-color: transparent; }
+.market-item:active { background: #f8f8f8; }
+.market-thumb { width: 100px; height: 100px; border-radius: 12px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 3rem; flex-shrink: 0; position: relative; overflow: hidden; border: 1px solid #ebebeb; }
+.market-thumb-badge { position: absolute; bottom: 5px; left: 5px; background: var(--black); color: var(--lime); font-size: 0.48rem; font-weight: 700; padding: 0.15rem 0.4rem; border-radius: 100px; letter-spacing: 0.05em; white-space: nowrap; }
+.market-item-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; padding: 0.1rem 0; }
+.market-item-top { display: flex; flex-direction: column; gap: 0.2rem; }
+.market-title { font-size: 0.9rem; font-weight: 600; color: #1a1a1a; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.market-meta { font-size: 0.7rem; color: #aaa; }
+.market-price { font-size: 0.92rem; font-weight: 700; color: #1a1a1a; }
+.market-item-bottom { display: flex; justify-content: flex-end; gap: 0.7rem; }
+.market-stat { font-size: 0.68rem; color: #bbb; display: flex; align-items: center; gap: 0.2rem; }
+
+.market-condition-badge { display: inline-block; font-size: 0.62rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 100px; background: #f0fdf4; color: #16a34a; margin-bottom: 0.15rem; }
+.market-condition-badge.mid { background: #fef9c3; color: #a16207; }
+
+/* ============ DETAIL ============ */
+.detail-img-area { background: var(--bg); height: 260px; display: flex; align-items: center; justify-content: center; font-size: 6rem; flex-shrink: 0; position: relative; }
+.detail-img-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; }
+.detail-img-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(0,0,0,0.2); }
+.detail-img-dot.active { background: var(--black); }
+
+.detail-body { flex: 1; overflow-y: auto; scrollbar-width: none; }
+.detail-body::-webkit-scrollbar { display: none; }
+
+.detail-main { padding: 1.2rem; }
+.detail-badges { display: flex; gap: 0.5rem; margin-bottom: 0.7rem; flex-wrap: wrap; }
+.detail-badge { font-size: 0.65rem; font-weight: 700; padding: 0.22rem 0.7rem; border-radius: 100px; }
+.db-inspect { background: #111; color: var(--lime); }
+.db-cate { background: #f1f5f9; color: #475569; }
+.db-cond { background: #fef9c3; color: #a16207; }
+
+.detail-title { font-size: 1.15rem; font-weight: 700; color: var(--black); line-height: 1.35; margin-bottom: 0.4rem; }
+.detail-price { font-size: 1.5rem; font-weight: 900; color: var(--black); font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.02em; margin-bottom: 0.3rem; }
+.detail-meta { font-size: 0.72rem; color: var(--muted); margin-bottom: 1.1rem; }
+
+.detail-divider { height: 8px; background: #f5f5f5; margin: 0 -1.2rem; }
+
+.detail-section { padding: 1.2rem 1.2rem 0; }
+.detail-section-title { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.85rem; }
+.detail-desc { font-size: 0.88rem; color: #333; line-height: 1.75; }
+
+.detail-inspect-row { display: flex; gap: 0.6rem; margin-bottom: 0.8rem; }
+.detail-inspect-photo { flex: 1; aspect-ratio: 1; border-radius: 10px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; border: 1px solid var(--border); position: relative; }
+.detail-inspect-label { position: absolute; bottom: 4px; font-size: 0.5rem; font-weight: 700; color: var(--muted); }
+.detail-inspect-grade { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 0.9rem 1rem; display: flex; justify-content: space-between; align-items: center; }
+.dig-label { font-size: 0.75rem; color: #166534; }
+.dig-value { font-size: 0.95rem; font-weight: 700; color: #16a34a; }
+
+.detail-seller { background: var(--black); border-radius: 16px; padding: 1.1rem; display: flex; align-items: center; gap: 0.9rem; margin: 1.2rem; }
+.ds-icon { width: 44px; height: 44px; border-radius: 50%; background: var(--lime); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+.ds-info { flex: 1; }
+.ds-name { font-size: 0.88rem; font-weight: 700; color: var(--white); margin-bottom: 0.2rem; }
+.ds-desc { font-size: 0.7rem; color: rgba(255,255,255,0.5); }
+.ds-badge { font-size: 0.6rem; font-weight: 700; background: rgba(200,245,58,0.15); color: var(--lime); padding: 0.2rem 0.5rem; border-radius: 100px; white-space: nowrap; }
+
+.detail-buy-wrap { padding: 1rem 1.2rem 1.4rem; display: flex; gap: 0.8rem; flex-shrink: 0; }
+.detail-like-btn { width: 50px; height: 50px; border-radius: 14px; border: 1.5px solid var(--border); background: var(--white); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; }
+.detail-buy-btn { flex: 1; background: var(--black); border: none; border-radius: 14px; padding: 0.9rem; font-family: 'Noto Sans KR', sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--lime); cursor: pointer; transition: transform 0.15s; }
+.detail-buy-btn:active { transform: scale(0.98); }
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <div class="status-icons">
+      <span>●●●</span>
+      <span>WiFi</span>
+      <span>🔋</span>
+    </div>
+  </div>
+
+  <!-- ===== HOME ===== -->
+  <div class="screen active" id="screen-home">
+    <div class="home-header">
+      <div class="home-top">
+        <div class="home-logo">중고대신</div>
+        <div class="home-alarm">🔔<div class="alarm-dot"></div></div>
+      </div>
+      <div class="home-greeting">안녕하세요 👋</div>
+      <div class="home-name"><em>이지민</em>님의 판매 현황</div>
+    </div>
+
+    <div class="home-body">
+
+      <!-- 무료 쿠폰 배너 -->
+      <div class="promo-banner" onclick="goTo('sell')">
+        <div class="promo-info">
+          <span class="promo-label">🎁 FIRST USER</span>
+          <div class="promo-title">에스코트 <strong>1회 무료</strong> 쿠폰</div>
+          <div class="promo-sub">첫 이용 한정 · 30일 내 사용</div>
+        </div>
+        <div class="promo-arrow">→</div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <button class="qa-btn primary" onclick="goTo('sell')">
+          <div>
+            <div class="qa-label" style="font-size:1rem;margin-bottom:0.3rem;">판매 신청하기</div>
+            <div class="qa-sub">사진 한 장으로 시작하세요</div>
+          </div>
+          <div class="qa-arrow">→</div>
+        </button>
+        <button class="qa-btn secondary" onclick="goTo('progress')">
+          <div class="qa-icon">📦</div>
+          <div class="qa-label">진행 현황</div>
+          <div class="qa-sub">3건 진행 중</div>
+        </button>
+        <button class="qa-btn secondary" onclick="goTo('settle')">
+          <div class="qa-icon">💰</div>
+          <div class="qa-label">정산 내역</div>
+          <div class="qa-sub">이번 달 432,000원</div>
+        </button>
+      </div>
+
+      <!-- 신뢰 카드 -->
+      <div class="trust-card">
+        <div class="trust-icon">🛡️</div>
+        <div class="trust-text">
+          <div class="trust-label">TRUST PROMISE</div>
+          <div class="trust-desc">모든 거래는 비대면으로 진행됩니다.<br>상태를 사실 그대로 공개하고, 사기 걱정 없이 거래하세요.</div>
+        </div>
+      </div>
+
+      <!-- 진행 중 -->
+      <div>
+        <div class="section-title-row" style="margin-bottom:0.8rem;">
+          <span class="section-ttl">진행 중인 판매</span>
+          <span class="section-more" onclick="goTo('progress')">전체보기 →</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.6rem;">
+          <div class="item-card" onclick="goTo('progress')">
+            <div class="item-thumb">📷</div>
+            <div class="item-info">
+              <div class="item-name">미러리스 카메라</div>
+              <div class="item-price">예상 320,000원</div>
+            </div>
+            <span class="item-status-badge badge-yellow">협상 대행 중</span>
+          </div>
+          <div class="item-card" onclick="goTo('progress')">
+            <div class="item-thumb">👜</div>
+            <div class="item-info">
+              <div class="item-name">브랜드 가방</div>
+              <div class="item-price">예상 85,000원</div>
+            </div>
+            <span class="item-status-badge badge-blue">검수 완료</span>
+          </div>
+          <div class="item-card" onclick="goTo('progress')">
+            <div class="item-thumb">🖥️</div>
+            <div class="item-info">
+              <div class="item-name">노트북</div>
+              <div class="item-price">예상 480,000원</div>
+            </div>
+            <span class="item-status-badge badge-green">판매 완료</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tip -->
+      <div class="tip-card">
+        <div class="tip-icon">💡</div>
+        <div class="tip-text">
+          <div class="tip-label">TIP</div>
+          <div class="tip-desc">대형 가구·가전이라면 지금 에스코트 무료 쿠폰을 써보세요!</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== SELL ===== -->
+  <div class="screen" id="screen-sell">
+    <div class="screen-header">
+      <button class="back-btn" onclick="goTo('home')">←</button>
+      <span class="screen-header-title">판매 신청</span>
+    </div>
+
+    <div class="sell-body">
+
+      <div class="sell-step-bar">
+        <div class="sell-step done"></div>
+        <div class="sell-step active"></div>
+        <div class="sell-step"></div>
+        <div class="sell-step"></div>
+      </div>
+
+      <!-- 사진 -->
+      <div>
+        <div class="sell-section-title">사진 등록</div>
+        <div class="photo-preview">
+          <div class="photo-thumb-item">📷</div>
+          <div class="photo-thumb-item">🖼️</div>
+          <div class="photo-thumb-item">🖼️</div>
+          <div class="photo-thumb-item add">＋</div>
+        </div>
+      </div>
+
+      <!-- 카테고리 -->
+      <div>
+        <div class="sell-section-title">카테고리</div>
+        <div class="chip-row" id="chips">
+          <div class="chip selected" onclick="selectChip(this)">가전</div>
+          <div class="chip" onclick="selectChip(this)">가구</div>
+          <div class="chip" onclick="selectChip(this)">의류</div>
+          <div class="chip" onclick="selectChip(this)">잡화</div>
+          <div class="chip" onclick="selectChip(this)">디지털</div>
+          <div class="chip" onclick="selectChip(this)">기타</div>
+        </div>
+      </div>
+
+      <!-- 기본 정보 -->
+      <div style="display:flex;flex-direction:column;gap:0.8rem;">
+        <div class="sell-section-title">기본 정보</div>
+        <div class="form-field">
+          <label class="form-label">물건 이름</label>
+          <input class="form-input" type="text" value="미러리스 카메라 Sony A7C">
+        </div>
+        <div class="form-field">
+          <label class="form-label">상태 (사실 그대로 작성해주세요)</label>
+          <select class="form-input form-select">
+            <option>상 (거의 새것)</option>
+            <option selected>중상 (사용감 적음)</option>
+            <option>중 (사용감 있음)</option>
+            <option>하 (기능 이상 없음)</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">상세 설명</label>
+          <textarea class="form-input form-textarea">2023년 구매, 1년 사용. 렌즈 포함. 외관 스크래치 없음.</textarea>
+        </div>
+        <div class="form-field">
+          <label class="form-label">희망 판매가</label>
+          <input class="form-input" type="text" value="320,000원">
+        </div>
+      </div>
+
+      <!-- 쿠폰 -->
+      <div class="coupon-apply">
+        <div class="ca-info">
+          <div class="ca-label">🎁 FIRST USER COUPON</div>
+          <div class="ca-title">에스코트 1회 무료 쿠폰</div>
+          <div class="ca-sub">최대 150,000원 상당 · 첫 이용 한정</div>
+        </div>
+        <div class="ca-toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+
+      <!-- AI 시세 -->
+      <div class="price-estimate">
+        <div>
+          <div class="pe-label">AI 예상 시세</div>
+          <div class="pe-value">280,000~340,000원</div>
+        </div>
+        <div class="pe-rate">
+          <div class="pe-rate-label">적용 수수료</div>
+          <div class="pe-rate-value">12%</div>
+        </div>
+      </div>
+
+      <button class="submit-btn" onclick="goTo('progress')">수거 신청하기 →</button>
+
+    </div>
+  </div>
+
+  <!-- ===== PROGRESS ===== -->
+  <div class="screen" id="screen-progress">
+    <div class="screen-header">
+      <button class="back-btn" onclick="goTo('home')">←</button>
+      <span class="screen-header-title">진행 현황</span>
+    </div>
+
+    <div class="progress-body">
+
+      <div class="prog-filter">
+        <div class="prog-filter-chip active">전체 (3)</div>
+        <div class="prog-filter-chip">진행 중 (2)</div>
+        <div class="prog-filter-chip">완료 (1)</div>
+        <div class="prog-filter-chip">대기 중 (0)</div>
+      </div>
+
+      <!-- 아이템 1 -->
+      <div class="prog-card">
+        <div class="prog-card-header">
+          <div class="prog-thumb">📷</div>
+          <div class="prog-info">
+            <div class="prog-name">미러리스 카메라 Sony A7C</div>
+            <div class="prog-price">예상 320,000원 · 수수료 12%</div>
+          </div>
+          <span class="item-status-badge badge-yellow">협상 중</span>
+        </div>
+
+        <!-- 검수 사진 (투명 공개) -->
+        <div class="status-photos">
+          <div class="sp-thumb" data-label="외관">📸</div>
+          <div class="sp-thumb" data-label="전면">📸</div>
+          <div class="sp-thumb" data-label="후면">📸</div>
+          <div class="sp-thumb" data-label="작동">📸</div>
+        </div>
+
+        <div class="prog-timeline">
+          <div class="timeline-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-content">
+              <div class="tl-label">비대면 수거 완료</div>
+              <div class="tl-date">5월 8일 오전 11:20</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-content">
+              <div class="tl-label">꼼꼼한 검수 및 촬영 완료</div>
+              <div class="tl-date">5월 9일 오후 2:00 · 상태 사진 4장 공개</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-content">
+              <div class="tl-label">플랫폼 등록 완료</div>
+              <div class="tl-date">5월 9일 오후 3:30</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-dot active">•</div>
+            <div class="tl-content">
+              <div class="tl-label">CS팀이 협상 대행 중</div>
+              <div class="tl-date">2명 문의 응대 중 — 채팅 대신 처리</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-dot pending"></div>
+            <div class="tl-content">
+              <div class="tl-label muted">최종 판매 및 정산</div>
+              <div class="tl-date">대기 중</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 아이템 2 -->
+      <div class="prog-card">
+        <div class="prog-card-header">
+          <div class="prog-thumb">👜</div>
+          <div class="prog-info">
+            <div class="prog-name">브랜드 가방 (구찌)</div>
+            <div class="prog-price">예상 85,000원 · 수수료 15%</div>
+          </div>
+          <span class="item-status-badge badge-blue">검수 완료</span>
+        </div>
+        <div class="prog-timeline">
+          <div class="timeline-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-content">
+              <div class="tl-label">비대면 수거 완료</div>
+              <div class="tl-date">5월 10일 오전 10:00</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-dot active">•</div>
+            <div class="tl-content">
+              <div class="tl-label">꼼꼼한 검수 및 촬영 완료</div>
+              <div class="tl-date">5월 10일 오후 4:15</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-dot pending"></div>
+            <div class="tl-content">
+              <div class="tl-label muted">플랫폼 등록</div>
+              <div class="tl-date">대기 중</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-dot pending"></div>
+            <div class="tl-content">
+              <div class="tl-label muted">협상 및 판매</div>
+              <div class="tl-date">대기 중</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 아이템 3 -->
+      <div class="prog-card">
+        <div class="prog-card-header">
+          <div class="prog-thumb">🖥️</div>
+          <div class="prog-info">
+            <div class="prog-name">노트북 LG 그램 14</div>
+            <div class="prog-price">480,000원 판매 완료</div>
+          </div>
+          <span class="item-status-badge badge-green">완료</span>
+        </div>
+        <div class="prog-timeline">
+          <div class="timeline-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-content"><div class="tl-label">비대면 수거</div><div class="tl-date">5월 1일</div></div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-content"><div class="tl-label">검수 및 촬영</div><div class="tl-date">5월 2일</div></div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-content"><div class="tl-label">플랫폼 등록</div><div class="tl-date">5월 2일</div></div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-content"><div class="tl-label">협상 완료</div><div class="tl-date">5월 5일</div></div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-content">
+              <div class="tl-label">정산 완료 — 432,000원 입금</div>
+              <div class="tl-date">5월 6일 오후 1:00 · 에스코트 무료 적용됨</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== SETTLE ===== -->
+  <div class="screen" id="screen-settle">
+    <div class="screen-header">
+      <button class="back-btn" onclick="goTo('home')">←</button>
+      <span class="screen-header-title">정산 내역</span>
+    </div>
+
+    <div class="settle-body">
+
+      <div class="settle-summary">
+        <div class="settle-month">2026년 5월</div>
+        <div class="settle-total-label">이번 달 총 정산금</div>
+        <div class="settle-total-value">432,000원</div>
+        <div class="settle-row">
+          <span class="settle-row-label">총 판매금액</span>
+          <span class="settle-row-val">480,000원</span>
+        </div>
+        <div class="settle-row">
+          <span class="settle-row-label">대행 수수료 (10%)</span>
+          <span class="settle-row-val neg">-48,000원</span>
+        </div>
+        <div class="settle-row">
+          <span class="settle-row-label">에스코트 비용</span>
+          <span class="settle-row-val discount">FREE 🎁</span>
+        </div>
+        <div class="settle-row" style="border-top:1px solid rgba(255,255,255,0.2);margin-top:0.3rem;padding-top:0.8rem;">
+          <span class="settle-row-label" style="color:rgba(255,255,255,0.7);font-weight:700;">최종 입금액</span>
+          <span class="settle-row-val lime">432,000원</span>
+        </div>
+      </div>
+
+      <button class="withdraw-btn">계좌로 출금하기 →</button>
+
+      <!-- 수수료 상세 -->
+      <div class="settle-detail-box">
+        <div class="sdb-title">수수료 상세</div>
+        <div class="sdb-row">
+          <span class="sdb-label">판매가</span>
+          <span class="sdb-val">480,000원</span>
+        </div>
+        <div class="sdb-row">
+          <span class="sdb-label">수수료율</span>
+          <span class="sdb-val">10% (50~100만원 구간)</span>
+        </div>
+        <div class="sdb-row">
+          <span class="sdb-label">수수료</span>
+          <span class="sdb-val red">-48,000원</span>
+        </div>
+        <div class="sdb-row">
+          <span class="sdb-label">에스코트 비용</span>
+          <span class="sdb-val purple">쿠폰 적용 (-150,000원)</span>
+        </div>
+        <div class="sdb-row">
+          <span class="sdb-label">최종 정산금</span>
+          <span class="sdb-val lime">432,000원</span>
+        </div>
+      </div>
+
+      <!-- 이전 내역 -->
+      <div>
+        <div class="section-title-row" style="margin-bottom:0.8rem;">
+          <span class="section-ttl">정산 이력</span>
+        </div>
+        <div class="settle-history-card">
+          <div class="settle-history-item">
+            <div class="sh-thumb">🖥️</div>
+            <div class="sh-info">
+              <div class="sh-name">노트북 LG 그램 14</div>
+              <div class="sh-date">2026.05.06 · 쿠폰 적용 🎁</div>
+            </div>
+            <div class="sh-amount">
+              <div class="sh-total">432,000원</div>
+              <div class="sh-fee">수수료 -48,000원</div>
+            </div>
+          </div>
+          <div class="settle-history-item">
+            <div class="sh-thumb">📱</div>
+            <div class="sh-info">
+              <div class="sh-name">아이폰 14 Pro</div>
+              <div class="sh-date">2026.04.18</div>
+            </div>
+            <div class="sh-amount">
+              <div class="sh-total">765,000원</div>
+              <div class="sh-fee">수수료 -85,000원</div>
+            </div>
+          </div>
+          <div class="settle-history-item">
+            <div class="sh-thumb">🎮</div>
+            <div class="sh-info">
+              <div class="sh-name">플레이스테이션 5</div>
+              <div class="sh-date">2026.04.02</div>
+            </div>
+            <div class="sh-amount">
+              <div class="sh-total">340,000원</div>
+              <div class="sh-fee">수수료 -60,000원</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== MARKET ===== -->
+  <div class="screen" id="screen-market" style="display:none;flex-direction:column;">
+
+    <!-- 헤더 -->
+    <div class="market-header">
+      <div class="market-loc-wrap">
+        <div class="market-loc-main">📍 마포구 · 서울 <span class="loc-arrow">▾</span></div>
+        <div class="market-loc-sub">중고대신 검수 완료 상품만 보여드려요</div>
+      </div>
+      <div class="market-icons">
+        <button class="market-icon-btn">🔍</button>
+        <button class="market-icon-btn">🔔</button>
+      </div>
+    </div>
+
+    <!-- 탭 -->
+    <div class="market-tabs">
+      <button class="market-tab active">전체</button>
+      <button class="market-tab">가전</button>
+      <button class="market-tab">가구</button>
+      <button class="market-tab">디지털</button>
+      <button class="market-tab">의류·잡화</button>
+    </div>
+
+    <!-- 상품 리스트 -->
+    <div class="market-list">
+
+      <div class="market-item" onclick="openDetail(0)">
+        <div class="market-thumb">
+          📷
+          <div class="market-thumb-badge">검수완료</div>
+        </div>
+        <div class="market-item-info">
+          <div class="market-item-top">
+            <span class="market-condition-badge mid">중상</span>
+            <div class="market-title">미러리스 카메라 Sony A7C (렌즈 포함)</div>
+            <div class="market-meta">강서구 · 1시간 전</div>
+          </div>
+          <div>
+            <div class="market-price">320,000원</div>
+            <div class="market-item-bottom">
+              <span class="market-stat">👁 128</span>
+              <span class="market-stat">❤️ 7</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="market-item" onclick="openDetail(1)">
+        <div class="market-thumb">
+          📺
+          <div class="market-thumb-badge">검수완료</div>
+        </div>
+        <div class="market-item-info">
+          <div class="market-item-top">
+            <span class="market-condition-badge">중</span>
+            <div class="market-title">삼성 43인치 스마트 TV (UN43)</div>
+            <div class="market-meta">마포구 · 3시간 전</div>
+          </div>
+          <div>
+            <div class="market-price">180,000원</div>
+            <div class="market-item-bottom">
+              <span class="market-stat">👁 89</span>
+              <span class="market-stat">❤️ 3</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="market-item" onclick="openDetail(2)">
+        <div class="market-thumb">
+          🪑
+          <div class="market-thumb-badge">검수완료</div>
+        </div>
+        <div class="market-item-info">
+          <div class="market-item-top">
+            <span class="market-condition-badge">상</span>
+            <div class="market-title">이케아 원목 4인 식탁 세트 (의자 4개 포함)</div>
+            <div class="market-meta">용산구 · 5시간 전</div>
+          </div>
+          <div>
+            <div class="market-price">250,000원</div>
+            <div class="market-item-bottom">
+              <span class="market-stat">👁 201</span>
+              <span class="market-stat">❤️ 12</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="market-item" onclick="openDetail(3)">
+        <div class="market-thumb">
+          💻
+          <div class="market-thumb-badge">검수완료</div>
+        </div>
+        <div class="market-item-info">
+          <div class="market-item-top">
+            <span class="market-condition-badge mid">중상</span>
+            <div class="market-title">맥북 에어 M2 (2023, 스페이스그레이, 256GB)</div>
+            <div class="market-meta">서초구 · 어제</div>
+          </div>
+          <div>
+            <div class="market-price">890,000원</div>
+            <div class="market-item-bottom">
+              <span class="market-stat">👁 315</span>
+              <span class="market-stat">❤️ 24</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="market-item" onclick="openDetail(4)">
+        <div class="market-thumb">
+          🧺
+          <div class="market-thumb-badge">검수완료</div>
+        </div>
+        <div class="market-item-info">
+          <div class="market-item-top">
+            <span class="market-condition-badge">상</span>
+            <div class="market-title">LG 스타일러 슈케어 S3MFC (2022년형)</div>
+            <div class="market-meta">강남구 · 2일 전</div>
+          </div>
+          <div>
+            <div class="market-price">420,000원</div>
+            <div class="market-item-bottom">
+              <span class="market-stat">👁 76</span>
+              <span class="market-stat">❤️ 5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="market-item" onclick="openDetail(5)">
+        <div class="market-thumb">
+          🛋️
+          <div class="market-thumb-badge">검수완료</div>
+        </div>
+        <div class="market-item-info">
+          <div class="market-item-top">
+            <span class="market-condition-badge mid">중</span>
+            <div class="market-title">3인 패브릭 소파 (베이지, 에스코트 배송 가능)</div>
+            <div class="market-meta">송파구 · 2일 전</div>
+          </div>
+          <div>
+            <div class="market-price">150,000원</div>
+            <div class="market-item-bottom">
+              <span class="market-stat">👁 143</span>
+              <span class="market-stat">❤️ 9</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:1.5rem;"></div>
+    </div>
+  </div>
+
+  <!-- ===== DETAIL ===== -->
+  <div class="screen" id="screen-detail" style="display:none;flex-direction:column;">
+    <div class="screen-header">
+      <button class="back-btn" onclick="closeDetail()">←</button>
+      <span class="screen-header-title" id="detail-header-title">상품 상세</span>
+      <span style="font-size:1.1rem;cursor:pointer;margin-left:auto;">⋯</span>
+    </div>
+
+    <!-- 이미지 영역 -->
+    <div class="detail-img-area" id="detail-img-emoji">📷</div>
+    <div style="display:flex;justify-content:center;gap:5px;padding:0.5rem 0;background:var(--bg);">
+      <div class="detail-img-dot active"></div>
+      <div class="detail-img-dot"></div>
+      <div class="detail-img-dot"></div>
+      <div class="detail-img-dot"></div>
+    </div>
+
+    <div class="detail-body" id="detail-body">
+
+      <!-- 기본 정보 -->
+      <div class="detail-main">
+        <div class="detail-badges">
+          <span class="detail-badge db-inspect">✓ 중고대신 검수완료</span>
+          <span class="detail-badge db-cate" id="detail-cate">디지털/카메라</span>
+          <span class="detail-badge db-cond" id="detail-cond">중상</span>
+        </div>
+        <div class="detail-title" id="detail-title">미러리스 카메라 Sony A7C</div>
+        <div class="detail-price" id="detail-price">320,000원</div>
+        <div class="detail-meta" id="detail-meta">강서구 · 1시간 전 · 조회 128</div>
+      </div>
+
+      <div class="detail-divider"></div>
+
+      <!-- 상품 설명 -->
+      <div class="detail-section">
+        <div class="detail-section-title">상품 설명</div>
+        <div class="detail-desc" id="detail-desc">
+          2023년 구매, 약 1년 사용했습니다. 렌즈(28-60mm 킷렌즈) 포함이고, 외관 스크래치 없음. 셔터 수 약 3,200회. 배터리 2개, 충전기, 정품 박스 포함입니다. 모든 기능 완벽 작동 확인됐어요.
+        </div>
+      </div>
+
+      <div class="detail-divider" style="margin-top:1.2rem;"></div>
+
+      <!-- 검수 결과 -->
+      <div class="detail-section">
+        <div class="detail-section-title">중고대신 검수 결과</div>
+        <div class="detail-inspect-row">
+          <div class="detail-inspect-photo">📸<div class="detail-inspect-label">외관</div></div>
+          <div class="detail-inspect-photo">📸<div class="detail-inspect-label">전면</div></div>
+          <div class="detail-inspect-photo">📸<div class="detail-inspect-label">후면</div></div>
+          <div class="detail-inspect-photo">📸<div class="detail-inspect-label">작동</div></div>
+        </div>
+        <div class="detail-inspect-grade">
+          <div>
+            <div style="font-size:0.7rem;color:#666;margin-bottom:0.25rem;">전문 검수 등급</div>
+            <div class="dig-label" id="detail-grade-label">중상 — 사용감 적음, 기능 이상 없음</div>
+          </div>
+          <div class="dig-value" id="detail-grade-val">B+</div>
+        </div>
+      </div>
+
+      <div class="detail-divider" style="margin-top:1.2rem;"></div>
+
+      <!-- 판매자 (중고대신) -->
+      <div class="detail-seller">
+        <div class="ds-icon">🛡️</div>
+        <div class="ds-info">
+          <div class="ds-name">중고대신 대행 서비스</div>
+          <div class="ds-desc">비대면 구매 · 검수 보장 · 안전 정산</div>
+        </div>
+        <div class="ds-badge">공식 파트너</div>
+      </div>
+
+      <!-- 구매 안내 -->
+      <div style="margin:0 1.2rem 0;background:#f8fafc;border-radius:14px;padding:1rem;border:1px solid #e2e8f0;">
+        <div style="font-size:0.72rem;font-weight:700;color:#475569;margin-bottom:0.6rem;">🔒 구매 안심 보장</div>
+        <div style="display:flex;flex-direction:column;gap:0.35rem;">
+          <div style="font-size:0.78rem;color:#334155;">✓ 전문가 직접 검수한 상품만 등록</div>
+          <div style="font-size:0.78rem;color:#334155;">✓ 사진·설명과 다를 경우 전액 환불</div>
+          <div style="font-size:0.78rem;color:#334155;">✓ 배송 중 파손 시 중고대신이 보상</div>
+          <div style="font-size:0.78rem;color:#334155;">✓ 에스코트(대형 운반) 옵션 이용 가능</div>
+        </div>
+      </div>
+
+      <div style="height:1rem;"></div>
+    </div>
+
+    <!-- 하단 구매 버튼 -->
+    <div class="detail-buy-wrap">
+      <button class="detail-like-btn" onclick="this.textContent = this.textContent==='🤍'?'❤️':'🤍'">🤍</button>
+      <button class="detail-buy-btn" onclick="alert('구매 신청이 완료됐습니다!\n비대면으로 안전하게 배송해드릴게요 🛡️')">비대면 구매 신청하기</button>
+    </div>
+  </div>
+
+
+  <div class="bottom-nav" style="justify-content:space-around;">
+    <button class="nav-item active" id="nav-home" onclick="goTo('home')">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">홈</div>
+    </button>
+    <button class="nav-item" id="nav-market" onclick="goTo('market')">
+      <div class="nav-icon">🛍️</div>
+      <div class="nav-label">구매</div>
+    </button>
+    <button class="nav-item" id="nav-sell" onclick="goTo('sell')">
+      <div class="nav-icon">➕</div>
+      <div class="nav-label">판매신청</div>
+    </button>
+    <button class="nav-item" id="nav-progress" onclick="goTo('progress')">
+      <div class="nav-icon">📦</div>
+      <div class="nav-label">진행현황</div>
+    </button>
+    <button class="nav-item" id="nav-settle" onclick="goTo('settle')">
+      <div class="nav-icon">💰</div>
+      <div class="nav-label">정산</div>
+    </button>
+  </div>
+
+</div>
+
+<script>
+const screens = {
+  home:'screen-home', market:'screen-market', sell:'screen-sell',
+  progress:'screen-progress', settle:'screen-settle'
+};
+const navIds = {
+  home:'nav-home', market:'nav-market', sell:'nav-sell',
+  progress:'nav-progress', settle:'nav-settle'
+};
+
+function goTo(page) {
+  // 모든 screen display:none
+  Object.values(screens).forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('active');
+    el.style.display = 'none';
+  });
+  // detail 숨김
+  const det = document.getElementById('screen-detail');
+  det.classList.remove('active');
+  det.style.display = 'none';
+
+  Object.values(navIds).forEach(id => document.getElementById(id).classList.remove('active'));
+
+  const target = document.getElementById(screens[page]);
+  target.style.display = 'flex';
+  target.classList.add('active');
+  target.scrollTop = 0;
+
+  if (navIds[page]) document.getElementById(navIds[page]).classList.add('active');
+}
+
+// 상품 데이터
+const items = [
+  { emoji:'📷', title:'미러리스 카메라 Sony A7C (렌즈 포함)', price:'320,000원', cate:'디지털/카메라', cond:'중상', condGrade:'B+', gradeLabel:'중상 — 사용감 적음, 기능 이상 없음', meta:'강서구 · 1시간 전 · 조회 128', desc:'2023년 구매, 약 1년 사용. 렌즈(28-60mm 킷렌즈) 포함. 외관 스크래치 없음. 셔터 수 약 3,200회. 배터리 2개, 충전기, 정품 박스 포함. 모든 기능 완벽 작동 확인.' },
+  { emoji:'📺', title:'삼성 43인치 스마트 TV (UN43)', price:'180,000원', cate:'가전/TV', cond:'중', condGrade:'C+', gradeLabel:'중 — 사용감 있으나 기능 이상 없음', meta:'마포구 · 3시간 전 · 조회 89', desc:'2021년 구매 삼성 스마트 TV. 화면 및 스피커 이상 없음. 리모컨 포함. 이사로 인해 처분합니다. 벽걸이 금구 없음, 스탠드 포함.' },
+  { emoji:'🪑', title:'이케아 원목 4인 식탁 세트 (의자 4개)', price:'250,000원', cate:'가구/식탁', cond:'상', condGrade:'A', gradeLabel:'상 — 거의 새것, 흠집 없음', meta:'용산구 · 5시간 전 · 조회 201', desc:'이케아 EKEDALEN 식탁 + 의자 4개 세트. 2024년 구매, 6개월 사용. 이사 예정으로 처분합니다. 에스코트 배송 이용 가능.' },
+  { emoji:'💻', title:'맥북 에어 M2 (2023, 스페이스그레이, 256GB)', price:'890,000원', cate:'디지털/노트북', cond:'중상', condGrade:'B+', gradeLabel:'중상 — 사용감 적음, 기능 이상 없음', meta:'서초구 · 어제 · 조회 315', desc:'2023년 구매 맥북 에어 M2. 배터리 사이클 약 120회. 충전기 포함. 외관 경미한 사용감(하판 미세 스크래치). 모든 기능 정상 작동.' },
+  { emoji:'🧺', title:'LG 스타일러 슈케어 S3MFC (2022년형)', price:'420,000원', cate:'가전/의류관리기', cond:'상', condGrade:'A-', gradeLabel:'상 — 흠집 없음, 필터 교체 완료', meta:'강남구 · 2일 전 · 조회 76', desc:'LG 스타일러 슈케어 2022년 구매, 1년 미만 사용. 필터 교체 완료. 외관 깨끗하고 기능 이상 없음. 이사로 인해 방문 에스코트 가능.' },
+  { emoji:'🛋️', title:'3인 패브릭 소파 (베이지, 에스코트 배송 가능)', price:'150,000원', cate:'가구/소파', cond:'중', condGrade:'C+', gradeLabel:'중 — 사용감 있음, 세탁 완료', meta:'송파구 · 2일 전 · 조회 143', desc:'3인 패브릭 소파. 2022년 구매. 전문 세탁 완료. 외관 사용감 있으나 앉는 데 이상 없음. 에스코트 배송 이용 가능 (별도 비용 안내).' },
+];
+
+function openDetail(idx) {
+  const item = items[idx];
+  document.getElementById('detail-header-title').textContent = item.cate;
+  document.getElementById('detail-img-emoji').textContent = item.emoji;
+  document.getElementById('detail-cate').textContent = item.cate;
+  document.getElementById('detail-cond').textContent = item.cond;
+  document.getElementById('detail-title').textContent = item.title;
+  document.getElementById('detail-price').textContent = item.price;
+  document.getElementById('detail-meta').textContent = item.meta;
+  document.getElementById('detail-desc').textContent = item.desc;
+  document.getElementById('detail-grade-label').textContent = item.gradeLabel;
+  document.getElementById('detail-grade-val').textContent = item.condGrade;
+
+  // 모든 screen 숨김
+  Object.values(screens).forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('active');
+    el.style.display = 'none';
+  });
+  const det = document.getElementById('screen-detail');
+  det.style.display = 'flex';
+  det.classList.add('active');
+  det.scrollTop = 0;
+  document.getElementById('detail-body').scrollTop = 0;
+}
+
+function closeDetail() {
+  const det = document.getElementById('screen-detail');
+  det.classList.remove('active');
+  det.style.display = 'none';
+  goTo('market');
+}
+
+// 마켓 탭 클릭
+document.querySelectorAll('.market-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.market-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+function selectChip(el) {
+  document.querySelectorAll('#chips .chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+document.querySelectorAll('.prog-filter-chip').forEach(chip => {
+  chip.addEventListener('click', function() {
+    document.querySelectorAll('.prog-filter-chip').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// 초기화: home만 표시
+goTo('home');
+</script>
+</body>
+</html>
